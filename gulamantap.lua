@@ -45,7 +45,7 @@ Window:Tag({
 })
 
 Window:Tag({
-    Title = "BETA",
+    Title = "BETAv1",
     Color = Purple,
 })
 
