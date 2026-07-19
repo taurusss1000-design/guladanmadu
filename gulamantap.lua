@@ -1,8 +1,4 @@
 local WindUI = loadstring(game:HttpGet("https://github.com/Footagesus/WindUI/releases/latest/download/main.lua"))()
---Nonaktifkan print & warn untuk modul ini agar console tidak spam
--- local print = function(...) end
--- local warn = function(...) end
-
 
 local Window = WindUI:CreateWindow({
     Title = "King Vypers",
@@ -45,7 +41,7 @@ Window:Tag({
 })
 
 Window:Tag({
-    Title = "BETAv1",
+    Title = "BETA",
     Color = Purple,
 })
 
@@ -312,7 +308,6 @@ InstantFishSection:Toggle({
                 local START_PULLING      = FishingRF.StartPulling
                 local FISHING_PULL_INPUT = RewardRF.FishingPullInput
                 local STOP_FISHING       = FishingRF.StopFishing
-                local DISCONNECT_RESTORE = RewardRF.StageFishingDisconnectRestore
                 local PULL_STATE_EVENT   = RewardRE:WaitForChild("FishingPullState")
 
                 local FLOATER = "Floater_Doll"
@@ -367,10 +362,6 @@ InstantFishSection:Toggle({
                     -- 2. ThrowFloater
                     pcall(function() THROW_FLOATER:InvokeServer(playerPos, castPos, rodName, FLOATER, FLOATER_PROPS, 10) end)
                     task.wait(0.3)
-
-                    -- 2.5 Restore Disconnect (New Fisch Update)
-                    pcall(function() DISCONNECT_RESTORE:InvokeServer(castPos) end)
-                    task.wait(0.1)
 
                     -- 3. ConfirmFloatingCast
                     pcall(function() CONFIRM_CAST:InvokeServer(castPos) end)
@@ -1330,131 +1321,6 @@ TeleportSection:Button({
             if localChar and localChar:FindFirstChild("HumanoidRootPart") then
                 localChar.HumanoidRootPart.CFrame = target.Character.HumanoidRootPart.CFrame + Vector3.new(0, 3, 0)
             end
-        end
-    end
-})
-
-
-local TeleportToEvent = TeleportTab:Section({ Title = "Teleport Event", Box = true, TextXAlignment = "Center", TextSize = 15, Opened = true })
-
-local Players = game:GetService("Players")
-local selectedEvent = nil
-local autoTeleportEnabled = false
-local autoTeleportConnection = nil
-
-local eventList = Players.LocalPlayer.PlayerGui.EventHudGui.Root.EventPanel.EventList
-
--- ambil event dari GUI (hanya boss_fish, skip weather dll)
-local function getEventNames()
-    local names = {}
-    for _, v in ipairs(eventList:GetChildren()) do
-        if v:IsA("Frame") and v.Name:sub(1, 5) == "Card_" then
-            -- ambil nama dari TextHolder.Name label
-            local inner = v:FindFirstChild("Inner")
-            if inner then
-                local textHolder = inner:FindFirstChild("TextHolder")
-                if textHolder then
-                    local nameLabel = textHolder:FindFirstChild("Name")
-                    if nameLabel then
-                        table.insert(names, nameLabel.Text)
-                    end
-                end
-            end
-        end
-    end
-    if #names == 0 then
-        table.insert(names, "No Event")
-    end
-    return names
-end
-
--- cari folder di workspace.Event yang namanya mengandung eventName
-local function getEventPosition(eventName)
-    for _, folder in ipairs(workspace.Event:GetChildren()) do
-        if folder.Name:lower():find(eventName:lower()) then
-            local point = folder:FindFirstChild("Event Point")
-            if point then
-                return point.Position
-            end
-        end
-    end
-    return nil
-end
-
-local function teleportToEvent(eventName)
-    local pos = getEventPosition(eventName)
-    if not pos then
-        warn("Event point tidak ditemukan untuk: " .. eventName)
-        return
-    end
-    local char = Players.LocalPlayer.Character
-    if char and char:FindFirstChild("HumanoidRootPart") then
-        char.HumanoidRootPart.CFrame = CFrame.new(pos + Vector3.new(0, 3, 0))
-    end
-end
-
--- Dropdown
-local EventDropdown = TeleportToEvent:Dropdown({
-    Title = "Select Event",
-    Desc = "Pilih event dari HUD",
-    Values = getEventNames(),
-    Value = getEventNames()[1],
-    Callback = function(option)
-        selectedEvent = option
-    end
-})
-selectedEvent = getEventNames()[1]
-
--- Refresh
-TeleportToEvent:Button({
-    Title = "Refresh Events",
-    Desc = "Update list event dari HUD",
-    Callback = function()
-        local names = getEventNames()
-        EventDropdown:SetValues(names)
-        EventDropdown:SetValue(names[1])
-        selectedEvent = names[1]
-    end
-})
-
--- Auto Teleport
-TeleportToEvent:Toggle({
-    Title = "Auto Teleport",
-    Desc = "Auto teleport saat event baru muncul di HUD",
-    Value = false,
-    Callback = function(state)
-        autoTeleportEnabled = state
-        if state then
-            autoTeleportConnection = eventList.ChildAdded:Connect(function(child)
-                if not autoTeleportEnabled then return end
-                task.wait(0.5)
-                local inner = child:FindFirstChild("Inner")
-                if inner then
-                    local textHolder = inner:FindFirstChild("TextHolder")
-                    if textHolder then
-                        local nameLabel = textHolder:FindFirstChild("Name")
-                        if nameLabel then
-                            teleportToEvent(nameLabel.Text)
-                        end
-                    end
-                end
-            end)
-        else
-            if autoTeleportConnection then
-                autoTeleportConnection:Disconnect()
-                autoTeleportConnection = nil
-            end
-        end
-    end
-})
-
--- Teleport Now
-TeleportToEvent:Button({
-    Title = "Teleport Now",
-    Desc = "Teleport ke event yang dipilih",
-    Callback = function()
-        if selectedEvent and selectedEvent ~= "No Event" then
-            teleportToEvent(selectedEvent)
         end
     end
 })
